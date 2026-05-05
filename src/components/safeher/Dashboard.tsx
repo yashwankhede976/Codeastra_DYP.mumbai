@@ -1,8 +1,22 @@
 import { MapPin, Activity, Users, Battery, Navigation, TrendingUp } from "lucide-react";
 import { SafetyScore } from "./SafetyScore";
+import { useSafeHer } from "./SafeHerProvider";
 
-export const Dashboard = () => (
-  <section id="dashboard" className="relative mx-auto max-w-7xl px-6 py-24">
+export const Dashboard = () => {
+  const {
+    isTracking,
+    status,
+    safetyScore,
+    demoNight,
+    demoIsolated,
+    startMonitoring,
+    toggleDemoNight,
+    toggleDemoIsolated,
+    lastUpdated,
+  } = useSafeHer();
+
+  return (
+    <section id="dashboard" className="relative mx-auto max-w-7xl px-6 py-24">
     <SectionHeader eyebrow="Dashboard" title="Your safety, at a glance" />
 
     <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -14,14 +28,37 @@ export const Dashboard = () => (
             <div className="text-xs text-foreground/50 uppercase tracking-widest">Good evening</div>
             <h3 className="font-display text-3xl md:text-4xl font-semibold mt-1">Hello, Aanya</h3>
             <p className="mt-3 text-foreground/60 max-w-sm text-sm">
-              You're in a safe zone. AI monitoring is active across your route home.
+              {isTracking
+                ? "AI monitoring is active across your route home."
+                : "Start tracking to begin real-time monitoring across your route home."}
             </p>
             <div className="mt-6 flex gap-2">
-              <Chip icon={<Activity className="h-3 w-3" />} label="Tracking active" dot />
-              <Chip icon={<Battery className="h-3 w-3" />} label="84%" />
+              <Chip icon={<Activity className="h-3 w-3" />} label={isTracking ? "Tracking active" : "Tracking idle"} dot={isTracking} />
+              <Chip icon={<Battery className="h-3 w-3" />} label={`${Math.max(0, 100 - safetyScore)}% risk`} />
+              <Chip icon={<Activity className="h-3 w-3" />} label={status} />
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                onClick={() => void startMonitoring()}
+                className="rounded-full bg-gradient-to-br from-soft-highlight to-green-accent px-5 py-2.5 text-sm font-semibold text-bg-deep shadow-[0_0_40px_-5px_hsl(var(--soft-highlight)/0.4)] transition hover:shadow-[0_0_60px_-5px_hsl(var(--soft-highlight)/0.75)]"
+              >
+                {isTracking ? "Restart tracking" : "Start tracking"}
+              </button>
+              <button
+                onClick={() => toggleDemoNight(!demoNight)}
+                className="rounded-full glass px-4 py-2 text-xs font-medium transition hover:bg-surface/40"
+              >
+                {demoNight ? "Night mode on" : "Night mode off"}
+              </button>
+              <button
+                onClick={() => toggleDemoIsolated(!demoIsolated)}
+                className="rounded-full glass px-4 py-2 text-xs font-medium transition hover:bg-surface/40"
+              >
+                {demoIsolated ? "Isolated area on" : "Isolated area off"}
+              </button>
             </div>
           </div>
-          <SafetyScore value={94} />
+          <SafetyScore value={safetyScore} />
         </div>
       </div>
 
@@ -74,8 +111,12 @@ export const Dashboard = () => (
         <div className="mt-2 text-xs text-foreground/50">Route to Home · 2.1 km left</div>
       </div>
     </div>
+    <div className="mt-4 text-xs text-foreground/40">
+      {lastUpdated ? `Last updated ${new Date(lastUpdated).toLocaleTimeString()}` : "Waiting for tracking data"}
+    </div>
   </section>
-);
+  );
+};
 
 const Chip = ({ icon, label, dot }: { icon: React.ReactNode; label: string; dot?: boolean }) => (
   <span className="inline-flex items-center gap-1.5 rounded-full bg-bg-deep/50 border border-soft-highlight/10 px-3 py-1.5 text-xs text-foreground/80">

@@ -1,8 +1,27 @@
 import { Shield, Navigation2, AlertTriangle } from "lucide-react";
 import { SectionHeader } from "./Dashboard";
+import { useSafeHer } from "./SafeHerProvider";
 
-export const LiveTracking = () => (
-  <section className="relative mx-auto max-w-7xl px-6 py-24">
+export const LiveTracking = () => {
+  const {
+    safetyScore,
+    status,
+    riskScore,
+    alertTriggered,
+    alertMessage,
+    emergencyMessage,
+    location,
+    triggerSOS,
+    isTracking,
+  } = useSafeHer();
+
+  const pinPosition = {
+    left: `${Math.min(86, Math.max(14, 50 + (location.longitude - 77.209) * 1200))}%`,
+    top: `${Math.min(82, Math.max(18, 50 - (location.latitude - 28.6139) * 1200))}%`,
+  };
+
+  return (
+    <section className="relative mx-auto max-w-7xl px-6 py-24">
     <SectionHeader eyebrow="Live Tracking" title="A guardian on every step" />
 
     <div className="mt-12 relative h-[560px] rounded-[2rem] overflow-hidden glass">
@@ -29,7 +48,7 @@ export const LiveTracking = () => (
       </div>
 
       {/* User pin */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+      <div className="absolute -translate-x-1/2 -translate-y-1/2" style={pinPosition}>
         <div className="relative">
           <div className="absolute inset-0 rounded-full bg-soft-highlight animate-pulse-ring" />
           <div className="absolute inset-0 rounded-full bg-soft-highlight animate-pulse-ring" style={{ animationDelay: '1s' }} />
@@ -55,7 +74,7 @@ export const LiveTracking = () => (
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-soft-highlight animate-pulse" />
           <span className="text-xs uppercase tracking-widest text-foreground/60">Risk:</span>
-          <span className="text-sm font-semibold text-soft-highlight">Low</span>
+          <span className="text-sm font-semibold text-soft-highlight">{status}</span>
         </div>
       </div>
 
@@ -63,14 +82,14 @@ export const LiveTracking = () => (
       <div className="absolute bottom-6 left-6 right-6 glass-strong rounded-3xl p-5 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <div className="text-xs text-foreground/50">Heading to</div>
-          <div className="font-medium text-neutral-light mt-0.5">Home · 12 min away</div>
+          <div className="font-medium text-neutral-light mt-0.5">{location.label} · {isTracking ? "Live monitoring" : "Tracking idle"}</div>
         </div>
 
-        <SOSButton />
+        <SOSButton onClick={() => void triggerSOS()} />
 
         <div className="text-right">
           <div className="text-xs text-foreground/50">Watching over you</div>
-          <div className="font-medium text-neutral-light mt-0.5">4 trusted contacts</div>
+          <div className="font-medium text-neutral-light mt-0.5">{alertTriggered ? "Alert sent" : "4 trusted contacts"}</div>
         </div>
       </div>
 
@@ -82,16 +101,23 @@ export const LiveTracking = () => (
           </div>
           <div>
             <div className="text-xs font-semibold text-neutral-light">AI Suggestion</div>
-            <div className="text-xs text-foreground/60 mt-1">Take the lit street ahead — better visibility & foot traffic.</div>
+            <div className="text-xs text-foreground/60 mt-1">{alertTriggered ? alertMessage : emergencyMessage}</div>
           </div>
         </div>
       </div>
+
+      <div className="absolute top-24 left-6 glass-strong rounded-2xl px-4 py-3 hidden md:block">
+        <div className="text-[10px] uppercase tracking-widest text-foreground/50">Safety score</div>
+        <div className="mt-1 font-display text-3xl font-bold text-neutral-light">{safetyScore}</div>
+        <div className="text-xs text-foreground/50">Risk {riskScore}</div>
+      </div>
     </div>
   </section>
-);
+  );
+};
 
-export const SOSButton = ({ size = 'md' }: { size?: 'md' | 'lg' }) => (
-  <button className={`relative group ${size === 'lg' ? 'h-32 w-32' : 'h-20 w-20'} shrink-0`}>
+export const SOSButton = ({ size = 'md', onClick }: { size?: 'md' | 'lg'; onClick?: () => void }) => (
+  <button onClick={onClick} className={`relative group ${size === 'lg' ? 'h-32 w-32' : 'h-20 w-20'} shrink-0`}>
     <span className="absolute inset-0 rounded-full bg-sos/40 blur-2xl group-hover:bg-sos/60 transition" />
     <span className="absolute inset-0 rounded-full animate-pulse-glow" />
     <span className="relative h-full w-full rounded-full bg-gradient-to-br from-sos to-[hsl(8_70%_45%)] flex items-center justify-center font-display font-bold text-neutral-light shadow-[var(--shadow-sos)] active:scale-95 transition-transform">
