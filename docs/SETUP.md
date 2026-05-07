@@ -14,6 +14,7 @@ Follow these steps to get SafeHer AI running on your machine. The system has two
 ### Step 1: Install Node Dependencies
 
 ```bash
+cd frontend
 npm install
 ```
 
@@ -22,6 +23,7 @@ This installs React, Vite, Tailwind, shadcn/ui, and all UI dependencies into `no
 ### Step 2: Start the Dev Server
 
 ```bash
+cd frontend
 npm run dev
 ```
 
@@ -50,7 +52,7 @@ cd backend
 **On Windows:**
 ```bash
 python -m venv .venv
-.\venv\Scripts\activate
+.\.venv\Scripts\activate
 ```
 
 **On macOS/Linux:**
@@ -134,16 +136,19 @@ Quit the server with CONTROL-C.
 
 ```
 Codeastra_DYP.mumbai/
-├── src/
-│   ├── lib/
-│   │   └── safeher-api.ts          # API client
-│   ├── components/safeher/
-│   │   ├── SafeHerProvider.tsx     # State provider
-│   │   ├── Dashboard.tsx            # Updated: wired to state
-│   │   ├── LiveTracking.tsx         # Updated: wired to state
-│   │   └── ...
-│   ├── App.tsx                      # Updated: SafeHerProvider wrapper
-│   └── main.tsx
+├── frontend/
+│   ├── src/
+│   │   ├── lib/
+│   │   │   └── safeher-api.ts      # API client
+│   │   ├── components/safeher/
+│   │   │   ├── SafeHerProvider.tsx # State provider
+│   │   │   ├── Dashboard.tsx       # Updated: wired to state
+│   │   │   ├── LiveTracking.tsx    # Updated: wired to state
+│   │   │   └── ...
+│   │   ├── App.tsx                 # Updated: SafeHerProvider wrapper
+│   │   └── main.tsx
+│   ├── public/
+│   └── package.json
 ├── backend/
 │   ├── safeher_ai/
 │   │   ├── settings.py
@@ -157,7 +162,6 @@ Codeastra_DYP.mumbai/
 │   │   └── urls.py
 │   ├── manage.py
 │   └── requirements.txt
-├── vite.config.ts                  # Updated: /api proxy
 ├── README.md
 └── docs/
     ├── SETUP.md                    # This file

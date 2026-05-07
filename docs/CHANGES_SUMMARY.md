@@ -28,7 +28,7 @@ This document summarizes all changes made to transform the SafeHer AI project fr
 
 ## Phase 2: Frontend State Management
 
-### 🆕 NEW: SafeHerProvider (src/components/safeher/SafeHerProvider.tsx)
+### 🆕 NEW: SafeHerProvider (frontend/src/components/safeher/SafeHerProvider.tsx)
 **Purpose:** Centralized React Context for tracking state management
 
 **Capabilities:**
@@ -45,7 +45,7 @@ This document summarizes all changes made to transform the SafeHer AI project fr
 
 ---
 
-### 🆕 NEW: API Client (src/lib/safeher-api.ts)
+### 🆕 NEW: API Client (frontend/src/lib/safeher-api.ts)
 **Purpose:** Fetch-based HTTP client with TypeScript types
 
 **Features:**
@@ -238,11 +238,11 @@ django-cors-headers>=4.6,<5
 ### Frontend Changes (5 files)
 | File | Type | Change |
 |------|------|--------|
-| src/components/safeher/SafeHerProvider.tsx | NEW | React Context for state mgmt |
-| src/lib/safeher-api.ts | NEW | API client with offline fallback |
-| src/App.tsx | MODIFIED | Added SafeHerProvider wrapper |
-| src/components/safeher/Dashboard.tsx | MODIFIED | Wired to live state + controls |
-| src/components/safeher/LiveTracking.tsx | MODIFIED | Dynamic pin + SOS handler |
+| frontend/src/components/safeher/SafeHerProvider.tsx | NEW | React Context for state mgmt |
+| frontend/src/lib/safeher-api.ts | NEW | API client with offline fallback |
+| frontend/src/App.tsx | MODIFIED | Added SafeHerProvider wrapper |
+| frontend/src/components/safeher/Dashboard.tsx | MODIFIED | Wired to live state + controls |
+| frontend/src/components/safeher/LiveTracking.tsx | MODIFIED | Dynamic pin + SOS handler |
 | vite.config.ts | MODIFIED | Added /api proxy |
 
 ### Backend Changes (11 files)

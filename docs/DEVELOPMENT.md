@@ -82,7 +82,7 @@ Fixes: ISSUE-42
 ### File Organization
 
 ```
-src/
+frontend/src/
 ├── components/
 │   ├── ui/               – shadcn/ui components
 │   │   ├── button.tsx
@@ -106,13 +106,20 @@ src/
 └── main.tsx
 ```
 
+### Frontend Ownership Rules
+
+- Put UI and interaction changes in `frontend/src/components/` or `frontend/src/pages/`
+- Keep API calls in `frontend/src/lib/safeher-api.ts` so the backend contract stays centralized
+- Keep state orchestration in `frontend/src/components/safeher/SafeHerProvider.tsx`
+- Prefer small reusable components over large page-only blocks when a pattern repeats
+
 ### Adding a New Component
 
 **Example: Add a "Trusted Contacts" panel**
 
 1. **Create the component:**
    ```bash
-   touch src/components/safeher/TrustedContacts.tsx
+  touch frontend/src/components/safeher/TrustedContacts.tsx
    ```
 
 2. **Import useSafeHer if you need state:**
@@ -149,7 +156,8 @@ src/
 
 4. **Test locally:**
    ```bash
-   npm run dev
+  cd frontend
+  npm run dev
    ```
    Open http://localhost:8080 and verify the component renders.
 
@@ -169,7 +177,7 @@ src/
 </div>
 ```
 
-**Available tokens (src/index.css):**
+**Available tokens (frontend/src/index.css):**
 - `bg-deep`, `bg-surface`, `bg-background`
 - `text-soft-highlight`, `text-neutral-light`, `text-green-accent`
 - `border-soft-highlight`, `border-green-accent`
@@ -231,6 +239,14 @@ backend/
 ├── manage.py
 └── requirements.txt
 ```
+
+### Backend Ownership Rules
+
+- Put request/response handling in `backend/tracking/views.py`
+- Put scoring and business rules in `backend/tracking/services.py`
+- Put session shape and transient state in `backend/tracking/state.py`
+- Keep Django project settings isolated in `backend/safeher_ai/`
+- Avoid mixing frontend concerns into backend modules, even for demo shortcuts
 
 ### Adding a New Endpoint
 
@@ -332,7 +348,7 @@ npm run test
 npm run test:watch
 ```
 
-**Add a test for SafeHer state (src/components/safeher/SafeHerProvider.test.tsx):**
+**Add a test for SafeHer state (frontend/src/components/safeher/SafeHerProvider.test.tsx):**
 ```typescript
 import { render, screen } from "@testing-library/react";
 import { SafeHerProvider } from "./SafeHerProvider";

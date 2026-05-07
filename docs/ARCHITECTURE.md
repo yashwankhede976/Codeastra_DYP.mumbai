@@ -30,7 +30,7 @@ User Opens App (http://localhost:8080)
 
 ## Frontend Architecture
 
-### 1. SafeHerProvider (src/components/safeher/SafeHerProvider.tsx)
+### 1. SafeHerProvider (frontend/src/components/safeher/SafeHerProvider.tsx)
 
 **Responsibility:** Centralized state management for tracking.
 
@@ -50,7 +50,7 @@ User Opens App (http://localhost:8080)
 const { isTracking, safetyScore, status, triggerSOS, startMonitoring, demoNight } = useSafeHer();
 ```
 
-### 2. SafeHer API Client (src/lib/safeher-api.ts)
+### 2. SafeHer API Client (frontend/src/lib/safeher-api.ts)
 
 **Responsibility:** HTTP communication with Django backend.
 
@@ -253,7 +253,7 @@ urlpatterns = [
 
 ## Vite Dev Proxy
 
-**vite.config.ts:**
+**frontend/vite.config.ts:**
 ```typescript
 server: {
   proxy: {

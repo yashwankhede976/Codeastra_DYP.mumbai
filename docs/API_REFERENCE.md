@@ -1,6 +1,6 @@
 # SafeHer AI – API Reference
 
-All API endpoints are prefixed with `/api`. During development, requests from the frontend are automatically proxied to `http://localhost:8000`.
+All API endpoints are prefixed with `/api`. During development, requests from `frontend/` are automatically proxied to `http://localhost:8000`.
 
 ## Endpoints
 
@@ -284,7 +284,7 @@ curl http://localhost:8000/api/risk
 
 ## Frontend Integration
 
-The frontend API client (src/lib/safeher-api.ts) abstracts these endpoints:
+The frontend API client (frontend/src/lib/safeher-api.ts) abstracts these endpoints:
 
 ```typescript
 // Start tracking

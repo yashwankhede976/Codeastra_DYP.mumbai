@@ -1,26 +1,44 @@
 # SafeHer AI
 
-SafeHer AI is a React + Vite web application for personal safety monitoring, live tracking, and emergency response, with a Django REST backend for risk scoring and alert orchestration.
+SafeHer AI is a full-stack safety monitoring app with a React + Vite frontend and a Django REST backend. The repository is intentionally split so the UI, API, and shared docs stay easy to understand for a small team.
 
-It is designed to feel dependable, fast, and calm under pressure: the kind of product people can open every day without having to think about how it works.
+## What Lives Where
 
-## Overview
+### Frontend
 
-The product experience is centered around clarity, confidence, and quick action:
+The frontend app now lives in `frontend/`.
 
-- A focused landing experience that explains the product quickly
-- A dashboard that surfaces safety status at a glance
-- Live tracking visuals that make route monitoring feel immediate
-- SOS and alert flows that stay easy to reach when needed
-- A closing call-to-action that reinforces trust and action
+- `frontend/src/pages/` holds route-level screens
+- `frontend/src/components/safeher/` holds SafeHer-specific UI and state wiring
+- `frontend/src/components/ui/` holds reusable shadcn/ui primitives
+- `frontend/src/lib/` holds client utilities and API helpers
+- `frontend/src/hooks/` holds shared React hooks
 
-## Why It Feels Production Ready
+### Backend
 
-- The interface uses a consistent visual system across all sections
-- Navigation and calls to action are simple and predictable
-- Safety signals are presented as clear status states instead of noisy dashboards
-- The layout is responsive and built to hold up on mobile and desktop
-- The project ships as a standard React + Vite app with a real production build path
+The backend is fully isolated in `backend/`.
+
+- `backend/safeher_ai/` holds Django project settings and root routing
+- `backend/tracking/` holds the API app, risk scoring, and session state
+- `backend/manage.py` is the Django entry point
+- `backend/requirements.txt` lists Python dependencies
+
+## Team Structure
+
+This layout is meant to make ownership clear when multiple people work in parallel.
+
+- Frontend changes should stay inside `frontend/` unless a route or build setting needs to change
+- Backend changes should stay inside `backend/` unless the API contract changes
+- Shared behavior should be documented in `docs/` so nobody has to reverse engineer it from code
+- API shape changes should be reflected in both `docs/API_REFERENCE.md` and the frontend client
+
+## Key Product Areas
+
+- Hero and onboarding narrative
+- Safety score and user status dashboard
+- Live route tracking panel
+- Emergency SOS actions and alerts
+- Supporting footer and product closure
 
 ## Tech Stack
 
@@ -34,15 +52,6 @@ The product experience is centered around clarity, confidence, and quick action:
 - React Router
 - TanStack Query
 - Recharts
-- shadcn/ui and Radix UI primitives
-
-## Product Areas
-
-- Hero and onboarding narrative
-- Safety score and user status dashboard
-- Live route tracking panel
-- Emergency SOS actions and alerts
-- Supporting footer and product closure
 
 ## Getting Started
 
@@ -54,12 +63,14 @@ The product experience is centered around clarity, confidence, and quick action:
 ### Install Dependencies
 
 ```bash
+cd frontend
 npm install
 ```
 
 ### Start the Development Server
 
 ```bash
+cd frontend
 npm run dev
 ```
 
@@ -76,6 +87,24 @@ python manage.py runserver 8000
 ```
 
 The API runs on `http://localhost:8000` and is proxied from the frontend under `/api` during development.
+
+## Repository Layout
+
+```text
+Codeastra_DYP.mumbai/
+├── frontend/               # React + Vite application
+│   ├── src/
+│   ├── public/
+│   ├── index.html
+│   └── package.json
+├── backend/                # Django backend
+│   ├── safeher_ai/
+│   ├── tracking/
+│   ├── manage.py
+│   └── requirements.txt
+├── docs/                   # Architecture, setup, and workflow docs
+└── README.md
+```
 
 ## Available Scripts
 
@@ -101,23 +130,33 @@ The API runs on `http://localhost:8000` and is proxied from the frontend under `
 
 ## Project Structure
 
-- `src/main.tsx` - application entry point
-- `src/App.tsx` - app shell, providers, and routing
-- `src/pages/Index.tsx` - main landing page
-- `src/pages/NotFound.tsx` - fallback 404 page
-- `src/components/safeher/` - page sections and product UI
-- `src/components/ui/` - reusable shadcn/ui components
-- `src/hooks/` - custom React hooks
-- `src/lib/utils.ts` - shared utility helpers
+- `frontend/src/main.tsx` - application entry point
+- `frontend/src/App.tsx` - app shell, providers, and routing
+- `frontend/src/pages/Index.tsx` - main landing page
+- `frontend/src/pages/NotFound.tsx` - fallback 404 page
+- `frontend/src/components/safeher/` - page sections and product UI
+- `frontend/src/components/ui/` - reusable shadcn/ui components
+- `frontend/src/hooks/` - custom React hooks
+- `frontend/src/lib/utils.ts` - shared utility helpers
+- `backend/tracking/views.py` - API endpoints
+- `backend/tracking/services.py` - risk scoring logic
+- `backend/tracking/state.py` - in-memory demo state
 
 ## Production Notes
 
 - The project is already configured as a React + Vite app.
 - The production build is expected to be generated by `vite build`.
-- `src/index.css` contains the global theme tokens and visual styling for the app.
+- `frontend/src/index.css` contains the global theme tokens and visual styling for the app.
 - Build verification has been completed successfully in this workspace.
 - The app metadata is set for SafeHer AI and the source files are free of legacy generator branding.
 - The backend uses in-memory session state for the demo workflow; replacing it with persistent storage is the next production hardening step.
+
+## Collaboration Notes
+
+- Keep feature work focused in one layer whenever possible.
+- Update docs when changing API behavior, routing, or project ownership.
+- Prefer small, reviewable changes so teammates can follow the history easily.
+- When a task spans frontend and backend, update the contract first, then implement both sides.
 
 ## License
 
