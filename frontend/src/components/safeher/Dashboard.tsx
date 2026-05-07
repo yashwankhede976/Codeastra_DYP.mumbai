@@ -1,4 +1,4 @@
-import { MapPin, Activity, Users, Battery, Navigation, TrendingUp } from "lucide-react";
+import { MapPin, Activity, Users, Battery, Navigation, TrendingUp, Cpu } from "lucide-react";
 import { SafetyScore } from "./SafetyScore";
 import { useSafeHer } from "./SafeHerProvider";
 
@@ -13,6 +13,8 @@ export const Dashboard = () => {
     toggleDemoNight,
     toggleDemoIsolated,
     lastUpdated,
+    confidence,
+    factors,
   } = useSafeHer();
 
   return (
@@ -36,6 +38,7 @@ export const Dashboard = () => {
               <Chip icon={<Activity className="h-3 w-3" />} label={isTracking ? "Tracking active" : "Tracking idle"} dot={isTracking} />
               <Chip icon={<Battery className="h-3 w-3" />} label={`${Math.max(0, 100 - safetyScore)}% risk`} />
               <Chip icon={<Activity className="h-3 w-3" />} label={status} />
+              {confidence && <Chip icon={<Cpu className="h-3 w-3" />} label={`AI Conf: ${(confidence * 100).toFixed(0)}%`} />}
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               <button
@@ -86,30 +89,23 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Trusted contacts */}
-      <MetricCard
-        icon={<Users className="h-5 w-5" />}
-        label="Trusted Contacts"
-        value="4"
-        sub="Notified instantly on alert"
-      />
-      {/* Risk trend */}
-      <MetricCard
-        icon={<TrendingUp className="h-5 w-5" />}
-        label="Weekly Risk"
-        value="-12%"
-        sub="Lower than last week"
-        trend
-      />
-      {/* Tracking duration */}
-      <div className="glass rounded-[2rem] p-6">
-        <div className="text-xs uppercase tracking-widest text-foreground/50">Active session</div>
-        <div className="mt-3 font-display text-3xl font-semibold">42 min</div>
-        <div className="mt-4 h-1.5 w-full rounded-full bg-bg-deep/60 overflow-hidden">
-          <div className="h-full w-2/3 bg-gradient-to-r from-green-accent to-soft-highlight rounded-full" />
+      {/* ML Factors */}
+      <div className="glass rounded-[2rem] p-6 lg:col-span-3">
+        <div className="text-xs uppercase tracking-widest text-foreground/50">Active AI Insights</div>
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {factors ? (
+              Object.entries(factors).map(([key, value]) => (
+                <div key={key} className="rounded-2xl bg-bg-deep/50 border border-soft-highlight/10 p-4">
+                   <div className="text-xs uppercase text-soft-highlight/80 mb-1">{key.replace("_", " ")}</div>
+                   <div className="text-sm text-neutral-light">{value}</div>
+                </div>
+              ))
+            ) : (
+                <div className="text-sm text-foreground/50 col-span-3">Start tracking to generate real-time AI safety insights.</div>
+            )}
         </div>
-        <div className="mt-2 text-xs text-foreground/50">Route to Home · 2.1 km left</div>
       </div>
+
     </div>
     <div className="mt-4 text-xs text-foreground/40">
       {lastUpdated ? `Last updated ${new Date(lastUpdated).toLocaleTimeString()}` : "Waiting for tracking data"}

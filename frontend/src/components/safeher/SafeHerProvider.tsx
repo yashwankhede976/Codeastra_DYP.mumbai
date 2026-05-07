@@ -1,14 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import {
-  fetchRisk,
-  postLocation,
-  startTracking,
+  analyzeRisk,
+  triggerAgent,
+  activateSOS,
   type AreaType,
   type SafeHerLocation,
-  type SafeHerRiskSnapshot,
   type SafetyStatus,
   type TimeOfDay,
+  type RiskAnalysisResponse,
+  type MLFactors,
 } from "@/lib/safeher-api";
 
 type SafeHerDemoState = {
@@ -29,6 +30,8 @@ type SafeHerContextValue = {
   location: SafeHerLocation;
   demoNight: boolean;
   demoIsolated: boolean;
+  factors: MLFactors | null;
+  confidence: number | null;
   startMonitoring: () => Promise<void>;
   triggerSOS: () => Promise<void>;
   toggleDemoNight: (value: boolean) => void;
@@ -44,18 +47,6 @@ const DEFAULT_LOCATION: SafeHerLocation = {
 };
 
 const SafeHerContext = createContext<SafeHerContextValue | null>(null);
-
-function deriveStatus(riskScore: number): SafetyStatus {
-  if (riskScore >= 70) {
-    return "High Risk";
-  }
-
-  if (riskScore >= 40) {
-    return "Moderate";
-  }
-
-  return "Safe";
-}
 
 function createLocation(previous: SafeHerLocation, demoState: SafeHerDemoState): SafeHerLocation {
   const latitudeJitter = (Math.random() - 0.5) * 0.006;
@@ -78,31 +69,24 @@ function createLocation(previous: SafeHerLocation, demoState: SafeHerDemoState):
   };
 }
 
-function normalizeSnapshot(snapshot: SafeHerRiskSnapshot): SafeHerRiskSnapshot {
-  return {
-    ...snapshot,
-    safetyScore: Math.max(0, Math.min(100, snapshot.safetyScore)),
-    riskScore: Math.max(0, Math.min(100, snapshot.riskScore)),
-    status: snapshot.status || deriveStatus(snapshot.riskScore),
-  };
-}
-
 export function SafeHerProvider({ children }: { children: React.ReactNode }) {
   const [isTracking, setIsTracking] = useState(false);
   const [location, setLocation] = useState(DEFAULT_LOCATION);
   const [demoNight, setDemoNight] = useState(false);
   const [demoIsolated, setDemoIsolated] = useState(false);
-  const [snapshot, setSnapshot] = useState<SafeHerRiskSnapshot>({
-    sessionId: "idle",
+  const [factors, setFactors] = useState<MLFactors | null>(null);
+  const [confidence, setConfidence] = useState<number | null>(null);
+  
+  const [snapshot, setSnapshot] = useState({
+    sessionId: "demo-session-id",
     safetyScore: 94,
     riskScore: 6,
-    status: "Safe",
+    status: "Safe" as SafetyStatus,
     alertTriggered: false,
-    emergencyMessage: "Tracking is idle. Start monitoring to evaluate your route in real time.",
-    alertChannel: "Monitoring",
-    location: DEFAULT_LOCATION,
+    recommendedAction: "Tracking is idle. Start monitoring to evaluate your route in real time.",
     timestamp: new Date().toISOString(),
   });
+  
   const intervalRef = useRef<number | null>(null);
 
   const clearTicker = () => {
@@ -116,48 +100,78 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
     return () => clearTicker();
   }, []);
 
-  const applySnapshot = (nextSnapshot: SafeHerRiskSnapshot) => {
-    const normalized = normalizeSnapshot(nextSnapshot);
-    setSnapshot(normalized);
-    setLocation(normalized.location);
+  const applySnapshot = async (analysis: RiskAnalysisResponse, sosTriggered: boolean = false) => {
+    setSnapshot({
+      sessionId: "demo-session-id",
+      safetyScore: analysis.safety_score,
+      riskScore: analysis.risk_score,
+      status: analysis.risk_level,
+      alertTriggered: analysis.alert_triggered,
+      recommendedAction: analysis.recommended_action,
+      timestamp: analysis.analyzed_at,
+    });
+    setFactors(analysis.factors);
+    setConfidence(analysis.confidence);
+    
+    // Update location based on what backend returns
+    setLocation(prev => ({
+      ...prev,
+      latitude: analysis.location.latitude,
+      longitude: analysis.location.longitude,
+      label: analysis.location.label || prev.label,
+    }));
 
-    if (normalized.alertTriggered) {
+    if (analysis.alert_triggered && !sosTriggered) {
       toast.error("High risk detected", {
-        description: normalized.emergencyMessage,
+        description: analysis.recommended_action,
       });
+      
+      // Autonomous Agentic Trigger
+      try {
+        const agentResponse = await triggerAgent({
+          riskScore: analysis.risk_score,
+          riskLevel: analysis.risk_level,
+          latitude: analysis.location.latitude,
+          longitude: analysis.location.longitude,
+          sessionId: "demo-session-id",
+          sosTriggered: false,
+          factors: analysis.factors,
+        });
+        
+        agentResponse.actions.forEach((action) => {
+           toast.info(`Agent Action: ${action.action_type}`, {
+             description: action.reason,
+           });
+        });
+      } catch (err) {
+        console.error("Agentic engine error", err);
+      }
     }
   };
 
   const syncLocation = async (source: "auto" | "manual" | "sos") => {
     const nextLocation = createLocation(location, { demoNight, demoIsolated });
-    const nextSnapshot = await postLocation({
-      demoNight,
-      demoIsolated,
-      location: nextLocation,
-      source,
-      sosTriggered: source === "sos",
-    });
-
-    applySnapshot(nextSnapshot);
-
-    if (source === "sos") {
-      toast.success("SOS sent", {
-        description: "Your live location and emergency status were dispatched to the backend.",
+    
+    try {
+      const analysis = await analyzeRisk({
+        demoNight,
+        demoIsolated,
+        location: nextLocation,
+        source,
+        sosTriggered: source === "sos",
+        sessionId: "demo-session-id",
+        speedKmh: Math.random() * 40, // demo speed
       });
+      
+      await applySnapshot(analysis, source === "sos");
+    } catch (err) {
+      toast.error("Backend unreachable", { description: "Failed to connect to ML risk engine." });
     }
   };
 
   const startMonitoring = async () => {
     clearTicker();
-
-    const nextSnapshot = await startTracking({
-      demoNight,
-      demoIsolated,
-      location: createLocation(location, { demoNight, demoIsolated }),
-      source: "manual",
-    });
-
-    applySnapshot(nextSnapshot);
+    await syncLocation("manual");
     setIsTracking(true);
 
     toast.success("Tracking started", {
@@ -173,8 +187,23 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
     if (!isTracking) {
       setIsTracking(true);
     }
+    
+    toast.success("SOS Initiated", {
+      description: "Triggering emergency workflows...",
+    });
 
-    await syncLocation("sos");
+    try {
+      await activateSOS({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        sessionId: "demo-session-id",
+        riskScore: snapshot.riskScore,
+        message: "User initiated SOS from dashboard.",
+      });
+      await syncLocation("sos");
+    } catch (err) {
+      toast.error("SOS Error", { description: "Failed to reach emergency backend." });
+    }
   };
 
   const state = useMemo<SafeHerContextValue>(
@@ -184,28 +213,22 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
       safetyScore: snapshot.safetyScore,
       riskScore: snapshot.riskScore,
       alertTriggered: snapshot.alertTriggered,
-      alertMessage: snapshot.emergencyMessage,
-      emergencyMessage: snapshot.emergencyMessage,
+      alertMessage: snapshot.recommendedAction,
+      emergencyMessage: snapshot.recommendedAction,
       sessionId: snapshot.sessionId,
       lastUpdated: snapshot.timestamp,
       location,
       demoNight,
       demoIsolated,
+      factors,
+      confidence,
       startMonitoring,
       triggerSOS,
       toggleDemoNight: (value: boolean) => setDemoNight(value),
       toggleDemoIsolated: (value: boolean) => setDemoIsolated(value),
     }),
-    [demoIsolated, demoNight, isTracking, location, snapshot.alertTriggered, snapshot.emergencyMessage, snapshot.riskScore, snapshot.sessionId, snapshot.safetyScore, snapshot.status, snapshot.timestamp],
+    [demoIsolated, demoNight, isTracking, location, snapshot.alertTriggered, snapshot.recommendedAction, snapshot.riskScore, snapshot.sessionId, snapshot.safetyScore, snapshot.status, snapshot.timestamp, factors, confidence],
   );
-
-  useEffect(() => {
-    void fetchRisk().then((nextSnapshot) => {
-      if (nextSnapshot.sessionId !== "local-demo") {
-        applySnapshot(nextSnapshot);
-      }
-    });
-  }, []);
 
   return <SafeHerContext.Provider value={state}>{children}</SafeHerContext.Provider>;
 }
@@ -221,5 +244,7 @@ export function useSafeHer() {
 }
 
 export function riskToLabel(riskScore: number): SafetyStatus {
-  return deriveStatus(riskScore);
+  if (riskScore >= 70) return "High Risk";
+  if (riskScore >= 40) return "Moderate";
+  return "Safe";
 }

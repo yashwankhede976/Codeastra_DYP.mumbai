@@ -121,6 +121,14 @@
   .glow-soft {
     box-shadow: 0 0 40px -8px hsl(140 13% 73% / 0.4);
   }
+
+  .safeher-map-shell {
+    height: 42rem;
+    width: 100%;
+    border-radius: 1.75rem;
+    overflow: hidden;
+    background: hsl(var(--bg-deep));
+  }
 }
 
 @layer utilities {
