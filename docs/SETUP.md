@@ -118,6 +118,11 @@ Quit the server with CONTROL-C.
 - **Fix:** Run `npm install` again
 - **If still failing:** Delete `node_modules/` and `package-lock.json`, then run `npm install`
 
+### Blank white screen or "Invalid hook call"
+- **Check:** Did you install dependencies inside `frontend/`?
+- **Fix:** Run `cd frontend && npm install`
+- **If it still shows a blank page:** Delete `frontend/node_modules/.vite/` and restart `npm run dev`
+
 ### "python manage.py runserver" fails
 - **Check:** `python --version` returns 3.10+
 - **Fix:** Make sure you activated the venv (prompt shows `(.venv)`)

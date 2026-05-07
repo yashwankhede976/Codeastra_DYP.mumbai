@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Circle, MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
+import { Circle, MapContainer, Polyline, TileLayer, ZoomControl, useMap } from "react-leaflet";
 import { AlertTriangle, LocateFixed, MapPinned, Radar, Shield, ShieldAlert, Navigation2 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import { useSafeHer } from "./SafeHerProvider";
@@ -73,7 +73,7 @@ export function TrackingMap() {
             </div>
           </div>
 
-          <div className="relative h-[560px]">
+          <div className="relative h-[560px] overflow-hidden">
             <MapContainer center={center} zoom={16} className="h-full w-full" zoomControl={false}>
               <Recenter center={center} />
               <ZoomControl position="bottomright" />

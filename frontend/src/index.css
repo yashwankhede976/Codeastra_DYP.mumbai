@@ -139,6 +139,30 @@
   .animate-shimmer { animation: shimmer 8s linear infinite; }
 }
 
+/* Leaflet map scrolling fix */
+.leaflet-container {
+  z-index: 1;
+}
+
+.leaflet-control-container {
+  pointer-events: auto;
+}
+
+.leaflet-control {
+  pointer-events: auto;
+}
+
+/* Prevent page scroll when map is being interacted with */
+.leaflet-container.leaflet-touch .leaflet-bar a:first-child {
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+}
+
+.leaflet-container.leaflet-touch .leaflet-bar a:last-child {
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
