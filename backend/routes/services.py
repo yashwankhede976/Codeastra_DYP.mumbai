@@ -107,10 +107,32 @@ def _score_route(waypoints: List[Waypoint], hour: int, area_type: str) -> dict:
 
 def _generate_route_waypoints(origin: Waypoint, dest: Waypoint, variant: int) -> List[Waypoint]:
     """
-    Generate synthetic intermediate waypoints for a route variant.
-    In production this would call an OSM/Google Maps routing API.
+    Generate route waypoints via Google Directions API (walking mode).
+    Falls back to synthetic waypoints if the API is unavailable.
     """
-    # Create a slight deviation per variant for demo purposes
+    from tracking.google_maps import get_route_directions, _is_configured
+
+    if _is_configured():
+        try:
+            routes = get_route_directions(
+                origin.latitude, origin.longitude,
+                dest.latitude, dest.longitude,
+                mode="walking",
+                alternatives=True,
+            )
+            # Pick the variant-th route (or last if not enough alternatives)
+            if routes:
+                route = routes[min(variant - 1, len(routes) - 1)]
+                wps = route.get("waypoints", [])
+                if wps:
+                    return [
+                        Waypoint(latitude=w["latitude"], longitude=w["longitude"], label=w["label"])
+                        for w in wps
+                    ]
+        except Exception:
+            pass  # fall through to synthetic
+
+    # Synthetic fallback — slight deviation per variant
     deviation = (variant - 1) * 0.005
     mid_lat = (origin.latitude + dest.latitude) / 2 + deviation
     mid_lng = (origin.longitude + dest.longitude) / 2 + deviation

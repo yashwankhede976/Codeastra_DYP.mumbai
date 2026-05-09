@@ -6,3 +6,4 @@ scikit-learn>=1.4,<2
 numpy>=1.26,<3
 pandas>=2.2,<3
 geopy>=2.4,<3
+requests>=2.31,<3

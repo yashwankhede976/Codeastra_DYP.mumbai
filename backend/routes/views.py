@@ -7,6 +7,12 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .services import recommend_safe_routes
+from tracking.google_maps import (
+    nearby_safe_places as gmap_nearby,
+    reverse_geocode,
+    static_map_url,
+    _is_configured as maps_configured,
+)
 
 
 @api_view(["POST"])
@@ -73,5 +79,70 @@ def safest_route(request):
             "routes_count": len(serialised),
             "routes": serialised,
             "generated_at": datetime.now(timezone.utc).isoformat(),
+            "maps_enriched": maps_configured(),
         }
     )
+
+
+@api_view(["GET"])
+def nearby_safe_places(request):
+    """
+    GET /api/routes/nearby-safe-places/?lat=18.93&lng=72.83&radius=1500
+    Returns hospitals and police stations near the given coordinates.
+    Falls back to configured safe zones when Maps API is not available.
+    """
+    lat = float(request.query_params.get("lat", 18.9398))
+    lng = float(request.query_params.get("lng", 72.8355))
+    radius = int(request.query_params.get("radius", 1500))
+
+    places = gmap_nearby(lat, lng, radius_m=radius)
+
+    return Response({
+        "places": places,
+        "count": len(places),
+        "center": {"latitude": lat, "longitude": lng},
+        "radius_m": radius,
+        "source": "google_places" if maps_configured() else "fallback_config",
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+
+@api_view(["GET"])
+def geocode_location(request):
+    """
+    GET /api/routes/geocode/?lat=18.93&lng=72.83
+    Reverse geocode GPS coordinates to a human-readable area name.
+    """
+    lat = float(request.query_params.get("lat", 18.9398))
+    lng = float(request.query_params.get("lng", 72.8355))
+
+    label = reverse_geocode(lat, lng)
+    map_url = static_map_url(lat, lng)
+
+    return Response({
+        "latitude": lat,
+        "longitude": lng,
+        "label": label,
+        "static_map_url": map_url,
+        "maps_configured": maps_configured(),
+    })
+
+
+@api_view(["GET"])
+def maps_status(request):
+    """
+    GET /api/routes/maps-status/
+    Returns the current Google Maps integration status.
+    """
+    return Response({
+        "google_maps_configured": maps_configured(),
+        "available_apis": [
+            "Geocoding API",
+            "Places API (Nearby Search)",
+            "Directions API (Walking Routes)",
+            "Static Maps API",
+        ] if maps_configured() else [],
+        "fallback_mode": not maps_configured(),
+        "default_region": "Mumbai, Maharashtra, India",
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+    })

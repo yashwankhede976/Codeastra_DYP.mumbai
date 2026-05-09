@@ -1,12 +1,44 @@
-import { useEffect } from "react";
+import { useEffect, Component, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, LogOut } from "lucide-react";
+import { ArrowLeft, LogOut, AlertTriangle } from "lucide-react";
 import { Dashboard as SafetyDashboard } from "@/components/safeher/Dashboard";
 import { LiveTracking } from "@/components/safeher/LiveTracking";
 import { AlertAndSOS } from "@/components/safeher/AlertAndSOS";
 import { Footer } from "@/components/safeher/Footer";
 import { Logo } from "@/components/safeher/Logo";
 import { useAuth } from "@/components/safeher/AuthProvider";
+
+// ── Error Boundary prevents blank screen on component crashes ─────────────
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      const err = this.state.error as Error;
+      return (
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 p-8 text-center">
+          <AlertTriangle className="h-12 w-12 text-red-400" />
+          <div className="text-xl font-semibold text-red-300">Something crashed</div>
+          <div className="max-w-lg rounded-2xl border border-white/10 bg-white/5 p-4 text-left font-mono text-xs text-foreground/60">
+            {err.message}
+          </div>
+          <button
+            onClick={() => this.setState({ error: null })}
+            className="rounded-full border border-white/10 px-5 py-2 text-sm transition hover:bg-white/5"
+          >
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -19,7 +51,11 @@ export default function DashboardPage() {
   }, [isAuthenticated, navigate, ready]);
 
   if (!ready || !isAuthenticated) {
-    return <div className="min-h-screen bg-background" />;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-soft-highlight border-t-transparent" />
+      </div>
+    );
   }
 
   return (
@@ -58,10 +94,17 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <SafetyDashboard />
-      <LiveTracking />
-      <AlertAndSOS />
+      <ErrorBoundary>
+        <SafetyDashboard />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <LiveTracking />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <AlertAndSOS />
+      </ErrorBoundary>
       <Footer />
     </main>
   );
 }
+

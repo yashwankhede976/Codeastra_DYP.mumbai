@@ -33,9 +33,9 @@ class SafeHerSnapshot:
 
 
 DEFAULT_LOCATION = SafeHerLocation(
-    latitude=28.6139,
-    longitude=77.209,
-    label="Connaught Place",
+    latitude=18.9398,
+    longitude=72.8355,
+    label="CST, Mumbai",
     areaType="normal",
     timeOfDay="day",
 )

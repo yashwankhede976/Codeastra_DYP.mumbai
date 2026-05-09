@@ -106,6 +106,7 @@ export interface RegisterRequest extends LoginRequest {
 }
 
 const API_ROOT = "/api";
+// Default location is Mumbai CST (18.9398, 72.8355) — real GPS overrides this at runtime
 
 type ApiErrorPayload = {
   detail?: string;

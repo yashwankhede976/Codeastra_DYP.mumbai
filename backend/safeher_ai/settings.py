@@ -1,5 +1,15 @@
 from pathlib import Path
 import os
+from datetime import timedelta
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load .env file if present (development convenience)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / ".env")
+except ImportError:
+    pass  # python-dotenv not installed — use real env vars
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -98,7 +108,6 @@ REST_FRAMEWORK = {
 }
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
-from datetime import timedelta
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
@@ -108,14 +117,22 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
+# ── Google Maps ───────────────────────────────────────────────────────────────
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
+
 # ── SafeHer AI Config ─────────────────────────────────────────────────────────
 SAFEHER_RISK_ALERT_THRESHOLD = 70
-SAFEHER_VOICE_KEYWORDS = ["help", "save me", "emergency", "danger", "sos", "bachao"]
+SAFEHER_VOICE_KEYWORDS = ["help", "save me", "emergency", "danger", "sos", "bachao", "madad"]
 SAFEHER_MAX_LOCATION_HISTORY = 500
+
+# Mumbai-focused safe zones (fallback when Google Places API is unavailable)
 SAFEHER_SAFE_ZONES = [
-    {"label": "Police Station – Connaught Place", "latitude": 28.6315, "longitude": 77.2167, "radius_m": 200},
-    {"label": "Apollo Hospital – New Delhi", "latitude": 28.6280, "longitude": 77.2019, "radius_m": 150},
-    {"label": "New Delhi Railway Station", "latitude": 28.6424, "longitude": 77.2195, "radius_m": 300},
-    {"label": "Indira Gandhi International Airport", "latitude": 28.5562, "longitude": 77.1000, "radius_m": 500},
-    {"label": "AIIMS Hospital", "latitude": 28.5675, "longitude": 77.2100, "radius_m": 200},
+    {"label": "CST Police Station", "latitude": 18.9400, "longitude": 72.8350, "radius_m": 200},
+    {"label": "KEM Hospital", "latitude": 18.9920, "longitude": 72.8400, "radius_m": 200},
+    {"label": "Lilavati Hospital", "latitude": 19.0510, "longitude": 72.8283, "radius_m": 200},
+    {"label": "Mumbai Central Railway Station", "latitude": 18.9691, "longitude": 72.8191, "radius_m": 300},
+    {"label": "Chhatrapati Shivaji Maharaj Terminus", "latitude": 18.9401, "longitude": 72.8353, "radius_m": 300},
+    {"label": "Colaba Police Station", "latitude": 18.9225, "longitude": 72.8323, "radius_m": 200},
+    {"label": "Cooper Hospital", "latitude": 19.1076, "longitude": 72.8388, "radius_m": 200},
+    {"label": "Dadar Railway Station", "latitude": 19.0178, "longitude": 72.8437, "radius_m": 300},
 ]

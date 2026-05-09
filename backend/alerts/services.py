@@ -34,14 +34,19 @@ def dispatch_sos(*, user, session_id: str, latitude: float, longitude: float,
                  risk_score: int = 0, message: str = "") -> dict:
     """
     Create an SOS EmergencyAlert, notify all emergency contacts (simulated),
-    and return a summary.
+    and return a summary enriched with Google Maps location data.
     """
     from .models import EmergencyAlert
+    from tracking.google_maps import reverse_geocode, static_map_url, _is_configured
+
+    # Enrich with real location label via Google Maps
+    area_label = reverse_geocode(latitude, longitude) if _is_configured() else f"({latitude:.5f}, {longitude:.5f})"
+    map_url = static_map_url(latitude, longitude) if _is_configured() else ""
 
     default_message = (
         message
-        or f"🚨 SOS ALERT: Your contact may be in danger at ({latitude:.5f}, {longitude:.5f}). "
-           "Please call them immediately or contact emergency services."
+        or f"🚨 SOS ALERT: Your contact may be in danger near {area_label}, Mumbai. "
+           "Please call them immediately or contact emergency services (100/112)."
     )
 
     contacts_notified = []
@@ -52,8 +57,8 @@ def dispatch_sos(*, user, session_id: str, latitude: float, longitude: float,
             result = _dispatch_alert(
                 contact_name=contact.name,
                 contact_phone=contact.phone,
-                message=default_message,
-                location={"latitude": latitude, "longitude": longitude},
+                message=default_message + (f"\n📍 Map: {map_url}" if map_url else ""),
+                location={"latitude": latitude, "longitude": longitude, "label": area_label},
             )
             contacts_notified.append(result)
 
@@ -75,9 +80,11 @@ def dispatch_sos(*, user, session_id: str, latitude: float, longitude: float,
         "status": "ACTIVE",
         "message": default_message,
         "contacts_notified": contacts_notified,
-        "location": {"latitude": latitude, "longitude": longitude},
+        "location": {"latitude": latitude, "longitude": longitude, "label": area_label},
+        "static_map_url": map_url,
         "created_at": alert.created_at.isoformat(),
     }
+
 
 
 def process_voice(*, raw_text: str, user=None, session_id: str = "anonymous") -> dict:

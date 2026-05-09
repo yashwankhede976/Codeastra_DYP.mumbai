@@ -1,4 +1,4 @@
-import { MapPin, Activity, Users, Battery, Navigation, TrendingUp, Cpu } from "lucide-react";
+import { MapPin, Activity, Battery, Navigation, Cpu, Locate, WifiOff } from "lucide-react";
 import { SafetyScore } from "./SafetyScore";
 import { useSafeHer } from "./SafeHerProvider";
 
@@ -15,6 +15,9 @@ export const Dashboard = () => {
     lastUpdated,
     confidence,
     factors,
+    location,
+    gpsError,
+    gpsPermissionGranted,
   } = useSafeHer();
 
   return (
@@ -69,21 +72,39 @@ export const Dashboard = () => {
       <div className="glass rounded-[2rem] p-6 relative overflow-hidden">
         <div className="flex items-center justify-between">
           <span className="text-xs uppercase tracking-widest text-foreground/50">Location</span>
-          <span className="flex items-center gap-1.5 text-xs text-soft-highlight">
-            <span className="h-1.5 w-1.5 rounded-full bg-soft-highlight animate-pulse" />
-            Live
-          </span>
+          {gpsPermissionGranted ? (
+            <span className="flex items-center gap-1.5 text-xs text-soft-highlight">
+              <Locate className="h-3 w-3" />
+              <span className="h-1.5 w-1.5 rounded-full bg-soft-highlight animate-pulse" />
+              GPS Live
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 text-xs text-foreground/40">
+              <WifiOff className="h-3 w-3" />
+              Mumbai Fallback
+            </span>
+          )}
         </div>
         <div className="mt-4 flex items-start gap-3">
           <div className="h-10 w-10 rounded-2xl bg-surface/60 flex items-center justify-center shrink-0">
             <MapPin className="h-5 w-5 text-soft-highlight" />
           </div>
           <div>
-            <div className="font-medium text-neutral-light">Connaught Place</div>
-            <div className="text-xs text-foreground/50 mt-0.5">New Delhi · Safe zone</div>
+            <div className="font-medium text-neutral-light">{location.label}</div>
+            <div className="text-xs text-foreground/50 mt-0.5">
+              {location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}
+            </div>
+            <div className="text-xs text-foreground/40 mt-0.5 capitalize">
+              {location.areaType} area · {location.timeOfDay}
+            </div>
           </div>
         </div>
-        <div className="mt-5 h-24 rounded-2xl bg-gradient-to-br from-surface/60 to-bg-deep/80 border border-soft-highlight/10 relative overflow-hidden">
+        {gpsError && (
+          <div className="mt-3 rounded-xl border border-yellow-500/20 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-300/80">
+            {gpsError}
+          </div>
+        )}
+        <div className="mt-4 h-20 rounded-2xl bg-gradient-to-br from-surface/60 to-bg-deep/80 border border-soft-highlight/10 relative overflow-hidden">
           <div className="absolute inset-0 opacity-30" style={{ backgroundImage: 'radial-gradient(circle at 30% 40%, hsl(var(--soft-highlight)) 0, transparent 40%), radial-gradient(circle at 70% 60%, hsl(var(--green-accent)) 0, transparent 40%)' }} />
           <Navigation className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-6 w-6 text-soft-highlight" />
         </div>
