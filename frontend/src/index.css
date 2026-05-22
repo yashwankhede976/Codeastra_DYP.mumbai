@@ -121,6 +121,14 @@
   .glow-soft {
     box-shadow: 0 0 40px -8px hsl(140 13% 73% / 0.4);
   }
+
+  .safeher-map-shell {
+    height: 42rem;
+    width: 100%;
+    border-radius: 1.75rem;
+    overflow: hidden;
+    background: hsl(var(--bg-deep));
+  }
 }
 
 @layer utilities {
@@ -129,6 +137,30 @@
   .animate-pulse-ring { animation: pulseRing 2.2s cubic-bezier(0.22,1,0.36,1) infinite; }
   .animate-fade-up { animation: fadeUp 0.8s var(--ease-smooth) both; }
   .animate-shimmer { animation: shimmer 8s linear infinite; }
+}
+
+/* Leaflet map scrolling fix */
+.leaflet-container {
+  z-index: 1;
+}
+
+.leaflet-control-container {
+  pointer-events: auto;
+}
+
+.leaflet-control {
+  pointer-events: auto;
+}
+
+/* Prevent page scroll when map is being interacted with */
+.leaflet-container.leaflet-touch .leaflet-bar a:first-child {
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+}
+
+.leaflet-container.leaflet-touch .leaflet-bar a:last-child {
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
 }
 
 @keyframes float {

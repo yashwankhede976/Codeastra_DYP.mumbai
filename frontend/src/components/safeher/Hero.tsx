@@ -1,4 +1,5 @@
 import { ArrowRight, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Logo } from "./Logo";
 
 export const Hero = () => (
@@ -12,12 +13,17 @@ export const Hero = () => (
       <Logo />
       <nav className="hidden md:flex items-center gap-8 text-sm text-foreground/70">
         <a href="#features" className="hover:text-foreground transition">Features</a>
-        <a href="#dashboard" className="hover:text-foreground transition">Product</a>
-        <a href="#" className="hover:text-foreground transition">Pricing</a>
+        <a href="#tracking" className="hover:text-foreground transition">Tracking</a>
+        <a href="#security" className="hover:text-foreground transition">Security</a>
       </nav>
-      <button className="glass rounded-full px-5 py-2 text-sm font-medium hover:bg-surface/50 transition">
-        Sign in
-      </button>
+      <div className="flex items-center gap-2">
+        <Link to="/login" className="glass rounded-full px-5 py-2 text-sm font-medium hover:bg-surface/50 transition">
+          Sign in
+        </Link>
+        <Link to="/register" className="rounded-full bg-gradient-to-br from-soft-highlight to-green-accent px-5 py-2 text-sm font-semibold text-bg-deep transition hover:opacity-95">
+          Register
+        </Link>
+      </div>
     </header>
 
     {/* Hero content */}
@@ -38,10 +44,10 @@ export const Hero = () => (
       </p>
 
       <div className="mt-12 flex items-center justify-center gap-4 animate-fade-up" style={{ animationDelay: '0.3s' }}>
-        <a href="#dashboard" className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-soft-highlight to-green-accent px-7 py-3.5 text-bg-deep font-semibold shadow-[0_0_40px_-5px_hsl(var(--soft-highlight)/0.5)] hover:shadow-[0_0_60px_-5px_hsl(var(--soft-highlight)/0.8)] transition-all duration-300">
+        <Link to="/register" className="group relative inline-flex items-center gap-2 rounded-full bg-gradient-to-br from-soft-highlight to-green-accent px-7 py-3.5 text-bg-deep font-semibold shadow-[0_0_40px_-5px_hsl(var(--soft-highlight)/0.5)] hover:shadow-[0_0_60px_-5px_hsl(var(--soft-highlight)/0.8)] transition-all duration-300">
           Get Protected
           <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-        </a>
+        </Link>
         <a href="#features" className="glass rounded-full px-7 py-3.5 text-sm font-medium hover:bg-surface/40 transition">
           See how it works
         </a>

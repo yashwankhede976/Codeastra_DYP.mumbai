@@ -1,127 +1,142 @@
-import { Shield, Navigation2, AlertTriangle } from "lucide-react";
+import { Shield, Navigation2, AlertTriangle, LocateFixed, ShieldAlert, Wifi, WifiOff } from "lucide-react";
 import { SectionHeader } from "./Dashboard";
 import { useSafeHer } from "./SafeHerProvider";
+import { GoogleTrackingMap } from "./GoogleTrackingMap";
 
 export const LiveTracking = () => {
   const {
     safetyScore,
     status,
-    riskScore,
     alertTriggered,
     alertMessage,
     emergencyMessage,
-    location,
-    triggerSOS,
     isTracking,
+    triggerSOS,
+    gpsError,
+    gpsPermissionGranted,
+    location,
   } = useSafeHer();
-
-  const pinPosition = {
-    left: `${Math.min(86, Math.max(14, 50 + (location.longitude - 77.209) * 1200))}%`,
-    top: `${Math.min(82, Math.max(18, 50 - (location.latitude - 28.6139) * 1200))}%`,
-  };
 
   return (
     <section className="relative mx-auto max-w-7xl px-6 py-24">
-    <SectionHeader eyebrow="Live Tracking" title="A guardian on every step" />
+      <SectionHeader eyebrow="Live Tracking" title="A guardian on every step" />
 
-    <div className="mt-12 relative h-[560px] rounded-[2rem] overflow-hidden glass">
-      {/* Map background */}
-      <div className="absolute inset-0 bg-bg-deep">
-        <svg className="absolute inset-0 h-full w-full opacity-40" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-              <path d="M 60 0 L 0 0 0 60" fill="none" stroke="hsl(var(--surface))" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
-        {/* Roads */}
-        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 800 560" preserveAspectRatio="none">
-          <path d="M0 280 Q 200 200 400 290 T 800 260" stroke="hsl(var(--surface))" strokeWidth="22" fill="none" opacity="0.5" />
-          <path d="M0 280 Q 200 200 400 290 T 800 260" stroke="hsl(var(--soft-highlight))" strokeWidth="2" strokeDasharray="6 8" fill="none" />
-          <path d="M400 0 L 380 560" stroke="hsl(var(--surface))" strokeWidth="14" fill="none" opacity="0.4" />
-          <path d="M120 60 Q 250 300 600 500" stroke="hsl(var(--surface))" strokeWidth="14" fill="none" opacity="0.4" />
-        </svg>
-        {/* Glow zones */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-72 w-72 rounded-full bg-green-accent/20 blur-3xl" />
-        <div className="absolute bottom-10 right-20 h-40 w-40 rounded-full bg-sos/15 blur-3xl" />
-      </div>
-
-      {/* User pin */}
-      <div className="absolute -translate-x-1/2 -translate-y-1/2" style={pinPosition}>
-        <div className="relative">
-          <div className="absolute inset-0 rounded-full bg-soft-highlight animate-pulse-ring" />
-          <div className="absolute inset-0 rounded-full bg-soft-highlight animate-pulse-ring" style={{ animationDelay: '1s' }} />
-          <div className="relative h-12 w-12 rounded-full bg-gradient-to-br from-soft-highlight to-green-accent flex items-center justify-center shadow-[0_0_30px_hsl(var(--soft-highlight)/0.6)]">
-            <Navigation2 className="h-5 w-5 text-bg-deep" fill="currentColor" />
-          </div>
-        </div>
-      </div>
-
-      {/* Floating safety badge */}
-      <div className="absolute top-6 left-6 glass-strong rounded-2xl px-5 py-4 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-soft-highlight to-green-accent flex items-center justify-center">
-          <Shield className="h-5 w-5 text-bg-deep" strokeWidth={2.5} />
-        </div>
+      <div className="mt-12 grid gap-5 lg:grid-cols-[1.35fr_0.65fr]">
+        {/* ── Google Map ── */}
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-foreground/50">Safety Score</div>
-          <div className="font-display text-2xl font-bold leading-none mt-0.5">94<span className="text-sm text-foreground/40">/100</span></div>
-        </div>
-      </div>
+          {/* Map header bar */}
+          <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-5 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-soft-highlight/15 text-soft-highlight">
+                <LocateFixed className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-neutral-light">{location.label}</div>
+                <div className="text-xs text-foreground/50">
+                  {isTracking ? "Tracking live" : "Tracking paused"}
+                </div>
+              </div>
+            </div>
 
-      {/* Risk indicator */}
-      <div className="absolute top-6 right-6 glass-strong rounded-2xl px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-soft-highlight animate-pulse" />
-          <span className="text-xs uppercase tracking-widest text-foreground/60">Risk:</span>
-          <span className="text-sm font-semibold text-soft-highlight">{status}</span>
-        </div>
-      </div>
-
-      {/* Bottom info bar */}
-      <div className="absolute bottom-6 left-6 right-6 glass-strong rounded-3xl p-5 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <div className="text-xs text-foreground/50">Heading to</div>
-          <div className="font-medium text-neutral-light mt-0.5">{location.label} · {isTracking ? "Live monitoring" : "Tracking idle"}</div>
-        </div>
-
-        <SOSButton onClick={() => void triggerSOS()} />
-
-        <div className="text-right">
-          <div className="text-xs text-foreground/50">Watching over you</div>
-          <div className="font-medium text-neutral-light mt-0.5">{alertTriggered ? "Alert sent" : "4 trusted contacts"}</div>
-        </div>
-      </div>
-
-      {/* AI hint */}
-      <div className="absolute bottom-32 right-6 max-w-xs glass-strong rounded-2xl p-4 hidden md:block">
-        <div className="flex items-start gap-3">
-          <div className="h-8 w-8 rounded-xl bg-soft-highlight/20 flex items-center justify-center shrink-0">
-            <AlertTriangle className="h-4 w-4 text-soft-highlight" />
+            <div className="flex items-center gap-2 text-xs">
+              {gpsPermissionGranted ? (
+                <>
+                  <Wifi className="h-3.5 w-3.5 text-soft-highlight" />
+                  <span className="text-soft-highlight">GPS Active</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-3.5 w-3.5 text-foreground/40" />
+                  <span className="text-foreground/40">Mumbai Fallback</span>
+                </>
+              )}
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: alertTriggered ? "#ef4444" : "#a4e3be" }}
+              />
+              <span className={alertTriggered ? "text-red-300" : "text-soft-highlight"}>{status}</span>
+            </div>
           </div>
-          <div>
-            <div className="text-xs font-semibold text-neutral-light">AI Suggestion</div>
-            <div className="text-xs text-foreground/60 mt-1">{alertTriggered ? alertMessage : emergencyMessage}</div>
+
+          <GoogleTrackingMap />
+        </div>
+
+        {/* ── Side panel ── */}
+        <div className="space-y-5">
+          {/* GPS status notice */}
+          {gpsError && (
+            <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200">
+              <div className="font-semibold">📍 GPS Notice</div>
+              <div className="mt-1 text-xs leading-relaxed text-yellow-200/70">{gpsError}</div>
+            </div>
+          )}
+
+          {/* Monitoring card */}
+          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6">
+            <div className="flex items-start gap-3">
+              <div className="h-11 w-11 rounded-2xl bg-soft-highlight/15 flex items-center justify-center text-soft-highlight">
+                <LocateFixed className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-neutral-light">
+                  {isTracking ? "Live monitoring active" : "Tracking ready"}
+                </div>
+                <div className="mt-1 text-sm leading-relaxed text-foreground/60">
+                  {alertTriggered ? alertMessage : emergencyMessage}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => void triggerSOS()}
+              className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-sos to-[hsl(8_70%_45%)] px-5 py-3 font-semibold text-neutral-light shadow-[0_0_50px_hsl(8_80%_60%/0.35)] transition hover:shadow-[0_0_70px_hsl(8_80%_60%/0.55)]"
+            >
+              <ShieldAlert className="h-4 w-4" />
+              Trigger SOS
+            </button>
+          </div>
+
+          {/* Area stats */}
+          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 space-y-3">
+            <div className="text-xs uppercase tracking-[0.25em] text-soft-highlight/80">Map Features</div>
+            <FeatureRow icon="🗺️" label="Map Engine" value="Google Maps" />
+            <FeatureRow icon="📍" label="Location" value={gpsPermissionGranted ? "Real GPS" : "Mumbai Fallback"} />
+            <FeatureRow icon="🏙️" label="Area Type" value={location.areaType} />
+            <FeatureRow icon="🕐" label="Time" value={location.timeOfDay} />
+            <FeatureRow icon="🛡️" label="Safety Score" value={`${safetyScore}/100`} />
+          </div>
+
+          {/* Map notes */}
+          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 text-sm leading-relaxed text-foreground/65">
+            <div className="text-xs uppercase tracking-[0.25em] text-soft-highlight/80 mb-3">Route notes</div>
+            <p>Google Maps powers the live view with real tiles and your actual GPS position.</p>
+            <p className="mt-3">Click <strong>🏥 Nearby</strong> on the map to see hospitals and police stations within 1.5 km.</p>
+            <p className="mt-3">When risk climbs, the radius circle turns red and a SOS marker is pinned on the map.</p>
           </div>
         </div>
       </div>
-
-      <div className="absolute top-24 left-6 glass-strong rounded-2xl px-4 py-3 hidden md:block">
-        <div className="text-[10px] uppercase tracking-widest text-foreground/50">Safety score</div>
-        <div className="mt-1 font-display text-3xl font-bold text-neutral-light">{safetyScore}</div>
-        <div className="text-xs text-foreground/50">Risk {riskScore}</div>
-      </div>
-    </div>
-  </section>
+    </section>
   );
 };
 
-export const SOSButton = ({ size = 'md', onClick }: { size?: 'md' | 'lg'; onClick?: () => void }) => (
-  <button onClick={onClick} className={`relative group ${size === 'lg' ? 'h-32 w-32' : 'h-20 w-20'} shrink-0`}>
+function FeatureRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span className="flex items-center gap-2 text-foreground/60">
+        <span>{icon}</span>
+        {label}
+      </span>
+      <span className="font-medium text-neutral-light capitalize">{value}</span>
+    </div>
+  );
+}
+
+export const SOSButton = ({ size = "md", onClick }: { size?: "md" | "lg"; onClick?: () => void }) => (
+  <button onClick={onClick} className={`relative group ${size === "lg" ? "h-32 w-32" : "h-20 w-20"} shrink-0`}>
     <span className="absolute inset-0 rounded-full bg-sos/40 blur-2xl group-hover:bg-sos/60 transition" />
     <span className="absolute inset-0 rounded-full animate-pulse-glow" />
-    <span className="relative h-full w-full rounded-full bg-gradient-to-br from-sos to-[hsl(8_70%_45%)] flex items-center justify-center font-display font-bold text-neutral-light shadow-[var(--shadow-sos)] active:scale-95 transition-transform">
-      <span className={size === 'lg' ? 'text-2xl' : 'text-base'}>SOS</span>
+    <span className="relative flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-sos to-[hsl(8_70%_45%)] font-display font-bold text-neutral-light shadow-[var(--shadow-sos)] transition-transform active:scale-95">
+      <span className={size === "lg" ? "text-2xl" : "text-base"}>SOS</span>
     </span>
   </button>
 );

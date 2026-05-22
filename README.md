@@ -75,6 +75,7 @@ npm run dev
 ```
 
 The app runs on the Vite dev server, usually at `http://localhost:8080`.
+If the page stays blank after a dependency change, rerun `cd frontend && npm install` and clear `frontend/node_modules/.vite/` before starting Vite again.
 
 ### Start the Backend API
 
