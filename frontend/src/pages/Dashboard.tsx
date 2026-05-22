@@ -5,6 +5,7 @@ import { Dashboard as SafetyDashboard } from "@/components/safeher/Dashboard";
 import { AccountSection } from "@/components/safeher/AccountSection";
 import { LiveTracking } from "@/components/safeher/LiveTracking";
 import { AlertAndSOS } from "@/components/safeher/AlertAndSOS";
+import { VoiceSOSSection } from "@/components/safeher/VoiceSOSSection";
 import { Footer } from "@/components/safeher/Footer";
 import { Logo } from "@/components/safeher/Logo";
 import { useAuth } from "@/components/safeher/AuthProvider";
@@ -106,6 +107,9 @@ export default function DashboardPage() {
       </ErrorBoundary>
       <ErrorBoundary>
         <AlertAndSOS />
+      </ErrorBoundary>
+      <ErrorBoundary>
+        <VoiceSOSSection />
       </ErrorBoundary>
       <Footer />
     </main>

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/components/safeher/AuthProvider";
 import { SafeHerProvider } from "@/components/safeher/SafeHerProvider";
+import { VoiceSOSIndicator } from "@/components/safeher/VoiceSOSIndicator";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
@@ -20,6 +21,8 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          {/* Global floating voice SOS widget — available on every page */}
+          <VoiceSOSIndicator />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
