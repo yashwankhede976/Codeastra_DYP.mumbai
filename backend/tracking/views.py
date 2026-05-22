@@ -147,30 +147,30 @@ def safe_zones(request):
 def risk_analyze(request):
     """POST /api/risk/analyze/ — ML-enhanced risk analysis with Google Maps enrichment."""
     from .models import LocationLog, RiskAnalysis
+    from agents.engine import evaluate_risk as agent_evaluate
 
     payload = request.data or {}
     loc = payload.get("location") or {}
 
-    latitude = float(loc.get("latitude", DEFAULT_LOCATION.latitude))
-    longitude = float(loc.get("longitude", DEFAULT_LOCATION.longitude))
-    area_type = str(loc.get("areaType", "normal"))
-    time_of_day = str(loc.get("timeOfDay", "day"))
-    hour_of_day = int(payload.get("hourOfDay", datetime.now(timezone.utc).hour))
-    speed_kmh = float(payload.get("speedKmh", 0.0))
-    sos_triggered = bool(payload.get("sosTriggered", False))
-    demo_night = bool(payload.get("demoNight", False))
-    demo_isolated = bool(payload.get("demoIsolated", False))
+    latitude               = float(loc.get("latitude", DEFAULT_LOCATION.latitude))
+    longitude              = float(loc.get("longitude", DEFAULT_LOCATION.longitude))
+    area_type              = str(loc.get("areaType", "normal"))
+    time_of_day            = str(loc.get("timeOfDay", "day"))
+    hour_of_day            = int(payload.get("hourOfDay", datetime.now(timezone.utc).hour))
+    speed_kmh              = float(payload.get("speedKmh", 0.0))
+    sos_triggered          = bool(payload.get("sosTriggered", False))
+    demo_night             = bool(payload.get("demoNight", False))
+    demo_isolated          = bool(payload.get("demoIsolated", False))
+    route_deviation_km     = float(payload.get("routeDeviationKm", 0.0))
+    unsafe_zone_proximity  = str(payload.get("unsafeZoneProximity", "none"))
 
     # ─ Google Maps enrichment ─────────────────────────────────────────
-    # 1. If no label provided, reverse geocode real area name
     label = str(loc.get("label", ""))
     if not label or label in ("CST, Mumbai", "Unknown Area"):
         label = gmap.reverse_geocode(latitude, longitude)
 
-    # 2. If area_type not explicitly set by client, classify via Places API
     if not demo_isolated and area_type == "normal":
-        real_area = gmap.classify_area_type(latitude, longitude)
-        area_type = real_area
+        area_type = gmap.classify_area_type(latitude, longitude)
 
     # ─ ML prediction ───────────────────────────────────────────────
     engine = RiskMLEngine.get()
@@ -183,6 +183,8 @@ def risk_analyze(request):
         sos_triggered=sos_triggered,
         demo_night=demo_night,
         demo_isolated=demo_isolated,
+        route_deviation_km=route_deviation_km,
+        unsafe_zone_proximity=unsafe_zone_proximity,
     )
 
     # ─ Persist ─────────────────────────────────────────────────────
@@ -199,21 +201,67 @@ def risk_analyze(request):
         alert_triggered=result["alert_triggered"],
     )
 
-    # ─ Nearby safe places (attached to response when risk is high) ─────────
+    # ─ Nearby safe places (when risk is high) ─────────────────────
     nearby = []
     if result["alert_triggered"]:
         nearby = gmap.nearby_safe_places(latitude, longitude, radius_m=1000)
 
+    # ─ Agentic Action Engine — auto-chain when alert triggered ─────
+    # When risk is HIGH (≥71) or SOS is triggered, the agentic engine
+    # autonomously decides and persists the action plan.  We embed
+    # the result directly in the risk analysis response so the frontend
+    # only needs one API call.
+    agent_actions_response = []
+    if result["alert_triggered"] or sos_triggered:
+        try:
+            from datetime import datetime as _dt
+            actions = agent_evaluate(
+                risk_score=result["risk_score"],
+                risk_level=result["risk_level"],
+                latitude=latitude,
+                longitude=longitude,
+                session_id=str(payload.get("sessionId", "anonymous")),
+                sos_triggered=sos_triggered,
+                factors=result["factors"],
+            )
+            now_ts = _dt.now(timezone.utc)
+            from agents.models import AgentAction
+            for action in actions:
+                db_action = AgentAction.objects.create(
+                    user=request.user if request.user.is_authenticated else None,
+                    session_id=payload.get("sessionId", "anonymous"),
+                    action_type=action.action_type,
+                    status="EXECUTED",
+                    risk_score=result["risk_score"],
+                    risk_level=result["risk_level"],
+                    payload=action.payload,
+                    reason=action.reason,
+                    completed_at=now_ts,
+                )
+                agent_actions_response.append({
+                    "id":          db_action.id,
+                    "action_type": action.action_type,
+                    "priority":    action.priority,
+                    "reason":      action.reason,
+                    "payload":     action.payload,
+                    "status":      "EXECUTED",
+                    "executed_at": now_ts.isoformat(),
+                })
+        except Exception as exc:
+            import logging as _log
+            _log.getLogger(__name__).warning("Agentic engine error in risk_analyze: %s", exc)
+
     return Response(
         {
             **result,
-            "analysis_id": analysis.id,
-            "location": {"latitude": latitude, "longitude": longitude, "label": label},
-            "area_type_detected": area_type,
-            "analyzed_at": analysis.analyzed_at.isoformat(),
-            "recommended_action": _recommended_action(result["risk_score"]),
-            "nearby_safe_places": nearby,
-            "maps_enriched": gmap._is_configured(),
+            "analysis_id":         analysis.id,
+            "location":            {"latitude": latitude, "longitude": longitude, "label": label},
+            "area_type_detected":  area_type,
+            "analyzed_at":         analysis.analyzed_at.isoformat(),
+            "recommended_action":  _recommended_action(result["risk_score"]),
+            "nearby_safe_places":  nearby,
+            "maps_enriched":       gmap._is_configured(),
+            "agent_actions":       agent_actions_response,
         }
     )
 
@@ -239,9 +287,10 @@ def risk_history(request):
 
 def _recommended_action(risk_score: int) -> str:
     if risk_score >= 85:
-        return "Activate SOS immediately and notify emergency contacts."
-    if risk_score >= 70:
-        return "Alert trusted contacts and share live location."
-    if risk_score >= 50:
-        return "Share location with a trusted contact and stay alert."
-    return "Conditions are safe. Continue monitoring."
+        return "Activate SOS immediately. Emergency contacts and authorities are being notified."
+    if risk_score >= 71:
+        return "High risk detected. Contacting emergency contacts and sharing live location."
+    if risk_score >= 31:
+        return "Moderate risk. Share your location with a trusted contact and stay alert."
+    return "Conditions are safe. Continue standard monitoring."
+

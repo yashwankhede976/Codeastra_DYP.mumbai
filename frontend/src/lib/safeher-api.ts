@@ -16,6 +16,52 @@ export interface MLFactors {
   time_of_day?: string;
   area_type?: string;
   speed?: string;
+  route_deviation?: string;
+  unsafe_zone?: string;
+}
+
+export interface RiskFactorsDetail {
+  night_factor: number;
+  area_factor: number;
+  movement_factor: number;
+  deviation_factor: number;
+  unsafe_zone_factor: number;
+  sos_override: number;
+  max_possible: {
+    night: number;
+    area: number;
+    movement: number;
+    deviation: number;
+    unsafe: number;
+  };
+}
+
+export interface NearbyPlace {
+  label: string;
+  latitude: number;
+  longitude: number;
+  type?: string;
+  distance_m?: number;
+}
+
+export type AgentActionType =
+  | "SEND_SOS"
+  | "ALERT_AUTHORITIES"
+  | "NOTIFY_CONTACTS"
+  | "START_RECORDING"
+  | "SHARE_LOCATION"
+  | "RECOMMEND_SAFE_PLACE"
+  | "RECOMMEND_SAFE_ROUTE"
+  | "INCREASE_MONITORING";
+
+export interface EmbeddedAgentAction {
+  id: number;
+  action_type: AgentActionType;
+  priority: number;
+  reason: string;
+  payload: Record<string, unknown>;
+  status: string;
+  executed_at: string;
 }
 
 export interface RiskAnalysisResponse {
@@ -25,11 +71,14 @@ export interface RiskAnalysisResponse {
   risk_level: SafetyStatus;
   confidence: number;
   factors: MLFactors;
+  risk_factors_detail?: RiskFactorsDetail;
   alert_triggered: boolean;
   probabilities: { Low: number; Medium: number; High: number };
   location: { latitude: number; longitude: number; label: string };
   analyzed_at: string;
   recommended_action: string;
+  nearby_safe_places?: NearbyPlace[];
+  agent_actions?: EmbeddedAgentAction[];
 }
 
 export interface AgentActionResponse {
@@ -69,6 +118,10 @@ export interface SafeHerTrackingRequest {
   hourOfDay?: number;
   speedKmh?: number;
   sessionId?: string;
+  /** Kilometres off the expected route (triggers RECOMMEND_SAFE_ROUTE action) */
+  routeDeviationKm?: number;
+  /** Proximity to a known unsafe zone: "none" | "nearby" | "inside" */
+  unsafeZoneProximity?: "none" | "nearby" | "inside";
 }
 
 export interface AuthUser {

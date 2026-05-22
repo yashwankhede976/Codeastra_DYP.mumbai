@@ -10,6 +10,9 @@ import {
   type TimeOfDay,
   type RiskAnalysisResponse,
   type MLFactors,
+  type RiskFactorsDetail,
+  type EmbeddedAgentAction,
+  type NearbyPlace,
 } from "@/lib/safeher-api";
 import { useGeolocation, MUMBAI_FALLBACK } from "@/hooks/use-geolocation";
 import { reverseGeocode, isGoogleMapsConfigured, ensureGoogleMapsLoaded } from "@/lib/google-maps-loader";
@@ -36,13 +39,21 @@ type SafeHerContextValue = {
   confidence: number | null;
   gpsError: string | null;
   gpsPermissionGranted: boolean;
+  /** Structured per-factor score breakdown */
+  riskFactorsDetail: RiskFactorsDetail | null;
+  /** Agentic actions auto-executed when risk is high */
+  agentActions: EmbeddedAgentAction[];
+  /** Nearby safe places returned when alert triggered */
+  nearbySafePlaces: NearbyPlace[];
+  /** Current route deviation in km (estimated from GPS trail) */
+  routeDeviationKm: number;
   startMonitoring: () => Promise<void>;
   triggerSOS: () => Promise<void>;
   toggleDemoNight: (value: boolean) => void;
   toggleDemoIsolated: (value: boolean) => void;
 };
 
-/** Mumbai CST as default — replaces Connaught Place */
+/** Mumbai CST as default */
 const DEFAULT_LOCATION: SafeHerLocation = {
   latitude: MUMBAI_FALLBACK.lat,
   longitude: MUMBAI_FALLBACK.lng,
@@ -71,7 +82,6 @@ async function classifyAreaType(
     await ensureGoogleMapsLoaded();
 
     return new Promise<AreaType>((resolve) => {
-      // PlacesService needs a DOM element — use a detached div
       const div = document.createElement("div");
       const map = new google.maps.Map(div, {
         center: { lat, lng },
@@ -98,6 +108,21 @@ async function classifyAreaType(
   }
 }
 
+/**
+ * Haversine distance between two lat/lng points (in km).
+ */
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export function SafeHerProvider({ children }: { children: React.ReactNode }) {
   const gps = useGeolocation();
 
@@ -107,6 +132,13 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
   const [demoIsolated, setDemoIsolated] = useState(false);
   const [factors, setFactors] = useState<MLFactors | null>(null);
   const [confidence, setConfidence] = useState<number | null>(null);
+  const [riskFactorsDetail, setRiskFactorsDetail] = useState<RiskFactorsDetail | null>(null);
+  const [agentActions, setAgentActions] = useState<EmbeddedAgentAction[]>([]);
+  const [nearbySafePlaces, setNearbySafePlaces] = useState<NearbyPlace[]>([]);
+
+  // Route deviation: store the "origin" GPS fix when tracking starts
+  const trackingOriginRef = useRef<{ lat: number; lng: number } | null>(null);
+  const [routeDeviationKm, setRouteDeviationKm] = useState(0);
 
   const [snapshot, setSnapshot] = useState({
     sessionId: "demo-session-id",
@@ -142,7 +174,17 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
       timeOfDay,
     }));
 
-    // Fire reverse geocode asynchronously to update label
+    // Route deviation = distance from tracking-start origin to current position
+    if (trackingOriginRef.current) {
+      const km = haversineKm(
+        trackingOriginRef.current.lat,
+        trackingOriginRef.current.lng,
+        gps.lat,
+        gps.lng,
+      );
+      setRouteDeviationKm(parseFloat(km.toFixed(3)));
+    }
+
     if (isGoogleMapsConfigured()) {
       reverseGeocode(gps.lat, gps.lng)
         .then((label) => {
@@ -164,6 +206,8 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
     });
     setFactors(analysis.factors);
     setConfidence(analysis.confidence);
+    setRiskFactorsDetail(analysis.risk_factors_detail ?? null);
+    setNearbySafePlaces(analysis.nearby_safe_places ?? []);
 
     setLocation((prev) => ({
       ...prev,
@@ -172,30 +216,45 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
       label: analysis.location.label || prev.label,
     }));
 
+    // Use agent_actions embedded in the risk analysis response (new v2 behaviour).
+    // Only fall back to a separate /agent/trigger/ call if the backend didn't embed them.
     if (analysis.alert_triggered && !sosTriggered) {
       toast.error("High risk detected", { description: analysis.recommended_action });
 
-      try {
-        const agentResponse = await triggerAgent({
-          riskScore: analysis.risk_score,
-          riskLevel: analysis.risk_level,
-          latitude: analysis.location.latitude,
-          longitude: analysis.location.longitude,
-          sessionId: "demo-session-id",
-          sosTriggered: false,
-          factors: analysis.factors,
+      if (analysis.agent_actions && analysis.agent_actions.length > 0) {
+        setAgentActions(analysis.agent_actions);
+        analysis.agent_actions.forEach((action) => {
+          toast.info(`Agent: ${action.action_type.replace(/_/g, " ")}`, {
+            description: action.reason,
+          });
         });
-        agentResponse.actions.forEach((action) => {
-          toast.info(`Agent Action: ${action.action_type}`, { description: action.reason });
-        });
-      } catch (err) {
-        console.error("Agentic engine error", err);
+      } else {
+        // Fallback: separate call for older backend versions
+        try {
+          const agentResponse = await triggerAgent({
+            riskScore: analysis.risk_score,
+            riskLevel: analysis.risk_level,
+            latitude: analysis.location.latitude,
+            longitude: analysis.location.longitude,
+            sessionId: "demo-session-id",
+            sosTriggered: false,
+            factors: analysis.factors,
+          });
+          agentResponse.actions.forEach((action) => {
+            toast.info(`Agent Action: ${action.action_type}`, { description: action.reason });
+          });
+        } catch (err) {
+          console.error("Agentic engine error", err);
+        }
       }
+    }
+
+    if (sosTriggered && analysis.agent_actions && analysis.agent_actions.length > 0) {
+      setAgentActions(analysis.agent_actions);
     }
   };
 
   const syncLocation = async (source: "auto" | "manual" | "sos") => {
-    // Use real GPS if available, fall back to current location state
     const lat = gps.permissionGranted ? gps.lat : location.latitude;
     const lng = gps.permissionGranted ? gps.lng : location.longitude;
     const timeOfDay: TimeOfDay = demoNight ? "night" : new Date().getHours() >= 18 ? "night" : "day";
@@ -218,6 +277,8 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
         sosTriggered: source === "sos",
         sessionId: "demo-session-id",
         speedKmh: gps.speed != null ? gps.speed * 3.6 : Math.random() * 20,
+        routeDeviationKm,
+        unsafeZoneProximity: "none",
       });
       await applySnapshot(analysis, source === "sos");
     } catch {
@@ -233,6 +294,12 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
         description: "Using Mumbai as fallback location.",
       });
     }
+
+    // Capture starting GPS position for route deviation computation
+    trackingOriginRef.current = { lat: gps.lat, lng: gps.lng };
+    setRouteDeviationKm(0);
+    setAgentActions([]);
+    setNearbySafePlaces([]);
 
     await syncLocation("manual");
     setIsTracking(true);
@@ -283,6 +350,10 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
       confidence,
       gpsError: gps.error,
       gpsPermissionGranted: gps.permissionGranted,
+      riskFactorsDetail,
+      agentActions,
+      nearbySafePlaces,
+      routeDeviationKm,
       startMonitoring,
       triggerSOS,
       toggleDemoNight: (value: boolean) => setDemoNight(value),
@@ -294,6 +365,7 @@ export function SafeHerProvider({ children }: { children: React.ReactNode }) {
       snapshot.alertTriggered, snapshot.recommendedAction, snapshot.riskScore,
       snapshot.sessionId, snapshot.safetyScore, snapshot.status, snapshot.timestamp,
       factors, confidence, gps.error, gps.permissionGranted,
+      riskFactorsDetail, agentActions, nearbySafePlaces, routeDeviationKm,
     ],
   );
 
@@ -307,7 +379,7 @@ export function useSafeHer() {
 }
 
 export function riskToLabel(riskScore: number): SafetyStatus {
-  if (riskScore >= 70) return "High Risk";
-  if (riskScore >= 40) return "Moderate";
+  if (riskScore >= 71) return "High Risk";
+  if (riskScore >= 31) return "Moderate";
   return "Safe";
 }

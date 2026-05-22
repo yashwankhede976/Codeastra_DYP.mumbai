@@ -5,13 +5,14 @@ class AgentAction(models.Model):
     """An autonomous action decided and executed by the agentic engine."""
 
     ACTION_CHOICES = [
-        ("SEND_SOS", "Send SOS"),
-        ("NOTIFY_CONTACTS", "Notify Emergency Contacts"),
-        ("SHARE_LOCATION", "Share Live Location"),
-        ("RECOMMEND_SAFE_PLACE", "Recommend Safe Place"),
-        ("START_RECORDING", "Start Audio/Video Recording"),
-        ("INCREASE_MONITORING", "Increase Monitoring Frequency"),
-        ("ALERT_AUTHORITIES", "Alert Authorities"),
+        ("SEND_SOS",              "Send SOS"),
+        ("NOTIFY_CONTACTS",       "Notify Emergency Contacts"),
+        ("SHARE_LOCATION",        "Share Live Location"),
+        ("RECOMMEND_SAFE_PLACE",  "Recommend Safe Place"),
+        ("RECOMMEND_SAFE_ROUTE",  "Recommend Safe Route"),
+        ("START_RECORDING",       "Start Audio/Video Recording"),
+        ("INCREASE_MONITORING",   "Increase Monitoring Frequency"),
+        ("ALERT_AUTHORITIES",     "Alert Authorities"),
     ]
     STATUS_CHOICES = [
         ("PENDING", "Pending"),
