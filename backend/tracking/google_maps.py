@@ -255,15 +255,12 @@ def _decode_steps_to_waypoints(steps: list[dict]) -> list[dict]:
 
 def static_map_url(lat: float, lng: float, zoom: int = 15, size: str = "400x300") -> str:
     """
-    Generate a Google Static Maps URL centred on the given coordinates.
-    Used to embed a map snapshot in SOS alert messages.
-    """
-    if not _is_configured():
-        return ""
+    Return a stable Google Maps link for the given coordinates.
 
-    marker = f"color:red|label:S|{lat},{lng}"
-    return (
-        f"https://maps.googleapis.com/maps/api/staticmap"
-        f"?center={lat},{lng}&zoom={zoom}&size={size}"
-        f"&markers={marker}&key={_api_key()}"
-    )
+    NOTE:
+    We intentionally return a regular Google Maps search URL instead of
+    a Static Maps image endpoint to avoid hard dependency on the
+    "Static Maps API" activation/billing state. This keeps SOS/location
+    links functional even when only partial Google Maps APIs are enabled.
+    """
+    return f"https://www.google.com/maps/search/?api=1&query={lat:.6f},{lng:.6f}"

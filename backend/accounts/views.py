@@ -25,14 +25,11 @@ def register(request):
     if serializer.is_valid():
         user = serializer.save()
         refresh = RefreshToken.for_user(user)
+        profile_data = ProfileSerializer(user).data
         return Response(
             {
                 "message": "Account created successfully.",
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                },
+                "user": profile_data,
                 "tokens": {
                     "access": str(refresh.access_token),
                     "refresh": str(refresh),
@@ -51,15 +48,11 @@ def login(request):
     if serializer.is_valid():
         user = serializer.validated_data["user"]
         refresh = RefreshToken.for_user(user)
+        profile_data = ProfileSerializer(user).data
         return Response(
             {
                 "message": "Login successful.",
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                    "is_verified": user.is_verified,
-                },
+                "user": profile_data,
                 "tokens": {
                     "access": str(refresh.access_token),
                     "refresh": str(refresh),

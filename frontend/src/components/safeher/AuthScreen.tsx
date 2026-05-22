@@ -23,6 +23,10 @@ const initialForm = {
   firstName: "",
   lastName: "",
   phone: "",
+  emergencyContactName: "",
+  emergencyContactEmail: "",
+  emergencyContactPhone: "",
+  emergencyContactRelationship: "other",
 };
 
 export function AuthScreen({ mode }: AuthScreenProps) {
@@ -59,6 +63,10 @@ export function AuthScreen({ mode }: AuthScreenProps) {
           first_name: form.firstName.trim(),
           last_name: form.lastName.trim(),
           phone: form.phone.trim(),
+          emergency_contact_name: form.emergencyContactName.trim(),
+          emergency_contact_email: form.emergencyContactEmail.trim(),
+          emergency_contact_phone: form.emergencyContactPhone.trim(),
+          emergency_contact_relationship: form.emergencyContactRelationship,
         });
       } else {
         await login({
@@ -144,6 +152,46 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 )}
 
                 {isRegister && <Field label="Phone" value={form.phone} onChange={updateField("phone")} type="tel" autoComplete="tel" />}
+
+                {isRegister && (
+                  <div className="rounded-3xl border border-white/10 bg-bg-deep/30 p-5">
+                    <div className="mb-4 space-y-1">
+                      <div className="text-sm font-semibold text-neutral-light">Emergency contact</div>
+                      <p className="text-xs leading-relaxed text-foreground/55">
+                        Add one trusted person now so SOS alerts can carry live location details immediately.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field
+                        label="Contact name"
+                        value={form.emergencyContactName}
+                        onChange={updateField("emergencyContactName")}
+                        autoComplete="name"
+                      />
+                      <Field
+                        label="Contact relationship"
+                        value={form.emergencyContactRelationship}
+                        onChange={updateField("emergencyContactRelationship")}
+                        autoComplete="off"
+                      />
+                      <Field
+                        label="Contact email"
+                        value={form.emergencyContactEmail}
+                        onChange={updateField("emergencyContactEmail")}
+                        type="email"
+                        autoComplete="email"
+                      />
+                      <Field
+                        label="Contact phone"
+                        value={form.emergencyContactPhone}
+                        onChange={updateField("emergencyContactPhone")}
+                        type="tel"
+                        autoComplete="tel"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <Field
                   label="Password"

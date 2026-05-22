@@ -2,6 +2,7 @@ import { useEffect, Component, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, LogOut, AlertTriangle } from "lucide-react";
 import { Dashboard as SafetyDashboard } from "@/components/safeher/Dashboard";
+import { AccountSection } from "@/components/safeher/AccountSection";
 import { LiveTracking } from "@/components/safeher/LiveTracking";
 import { AlertAndSOS } from "@/components/safeher/AlertAndSOS";
 import { Footer } from "@/components/safeher/Footer";
@@ -98,6 +99,9 @@ export default function DashboardPage() {
         <SafetyDashboard />
       </ErrorBoundary>
       <ErrorBoundary>
+        <AccountSection />
+      </ErrorBoundary>
+      <ErrorBoundary>
         <LiveTracking />
       </ErrorBoundary>
       <ErrorBoundary>
@@ -107,4 +111,4 @@ export default function DashboardPage() {
     </main>
   );
 }
-
+

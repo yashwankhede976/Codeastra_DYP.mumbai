@@ -21,6 +21,7 @@ type AuthContextValue = {
   ready: boolean;
   login: (payload: LoginRequest) => Promise<void>;
   register: (payload: RegisterRequest) => Promise<void>;
+  updateUser: (user: AuthUser) => void;
   logout: () => void;
 };
 
@@ -84,6 +85,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     register: async (payload) => {
       persistSession(await handleAuthRequest(registerUser(payload)));
+    },
+    updateUser: (user) => {
+      if (!session?.tokens) {
+        return;
+      }
+
+      persistSession({
+        user,
+        tokens: session.tokens,
+      });
     },
     logout: () => persistSession(null),
   };
